@@ -32,7 +32,7 @@ async function registerUser(request, response) {
   try {
     sqlQuery = "INSERT INTO users(full_name, email, password) VALUES (?, ?, ?)";
     await pool.query(sqlQuery, [
-      dataValidationResponse.validatedData.fullName,
+      dataValidationResponse.validatedData.name,
       dataValidationResponse.validatedData.email,
       dataValidationResponse.validatedData.password,
     ]);
@@ -64,24 +64,24 @@ async function loginUser(request, response) {
     );
     if (!userDataFromDB[0]) {
       return response
-        .status(200)
+        .status(400)
         .send("User not found. Please check email and password");
     }
   } catch (error) {
     console.log(error);
     return response.status(400).send("Something went wrong");
   }
-
+  console.log(userDataFromDB[0]);
   // verifies users password input 
   let userIsAuthed = verifyLoginPassword(
     userDataFromDB[0].password,
-    dataValidationResponse.validatedData.password
+    dataValidationResponse.validatedData.pass
   )
 
   if(userIsAuthed){
     // return response.status(200).send('User is authenticated')
     let token = createToken(userDataFromDB[0])
-    if(!!token){
+    if(token){
       return response.status(200).send({ message: 'User is authenticated', token})
     } else if (!token){
       return response.status(400).send('Something went wrong, please try again')
@@ -96,7 +96,7 @@ async function loginUser(request, response) {
 //INPUT user input data object RETURNS returns error t/f and validated object or error
 async function validateUserRegistrationData(data) {
   let userSchema = Joi.object({
-    fullName: Joi.string().required(),
+    name: Joi.string().required(),
     email: Joi.string().required().lowercase().email().messages({
       "string.email": "Email must be valid",
     }),
@@ -115,7 +115,7 @@ async function validateUserRegistrationData(data) {
 async function validateUserLoginData(data) {
   let userSchema = Joi.object({
     email: Joi.string().required().lowercase().email(),
-    password: Joi.string().required()
+    pass: Joi.string().required()
   });
   try {
     const validatedData = await userSchema.validateAsync(data);
